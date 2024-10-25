@@ -27,14 +27,14 @@ pipeline {
                     image 'node:18-alpine'
                     reuseNode true
                 }
+            }
 
-                steps {
-                    sh '''
-                        ls -la
-                        npm run test
-                        ls -la
-                    '''
-                }
+            steps {
+                sh '''
+                    ls -la
+                    npm run test
+                    ls -la
+                '''
             }
         }
     }
