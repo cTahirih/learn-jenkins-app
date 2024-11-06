@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-		NODE_IMAGE = 'node:18-alpine'
-        NETLIFY_SITE_ID = 'PUT YOUR NETLIFY SITE ID HERE'
+        NODE_IMAGE = 'node:18-alpine'
+        NETLIFY_SITE_ID = 'ce7b6e06-d0e0-41f2-ba92-7ea4780a5c43'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
