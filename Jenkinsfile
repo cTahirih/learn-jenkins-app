@@ -2,12 +2,13 @@ pipeline {
     agent any
 
     environment {
-        NODE_IMAGE = 'node:18-alpine'
-        NETLIFY_SITE_ID = 'ce7b6e06-d0e0-41f2-ba92-7ea4780a5c43'
+		NODE_IMAGE = 'node:18-alpine'
+        NETLIFY_SITE_ID = 'PUT YOUR NETLIFY SITE ID HERE'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
     stages {
+
         stage('Build') {
             agent {
                 docker {
@@ -16,29 +17,20 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    echo 'Starting Build Stage'
-                    sh '''
-                        echo "Listing files before build:"
-                        ls -la
-                        echo "Node version:"
-                        node --version
-                        echo "NPM version:"
-                        npm --version
-                        echo "Installing dependencies:"
-                        npm ci
-                        echo "Building the project:"
-                        npm run build
-                        echo "Listing files after build:"
-                        ls -la
-                    '''
-                }
+                sh '''
+                    ls -la
+                    node --version
+                    npm --version
+                    npm ci
+                    npm run build
+                    ls -la
+                '''
             }
         }
 
-        stage('Run tests') {
+        stage('Tests') {
             parallel {
-                stage('Unit Tests') {
+                stage('Unit tests') {
                     agent {
                         docker {
                             image "${NODE_IMAGE}"
@@ -47,16 +39,14 @@ pipeline {
                     }
 
                     steps {
-                        script {
-                            echo 'Starting Test Stage'
-                            sh '''
-                                echo "Listing files before testing:"
-                                ls -la
-                                echo "Running tests:"
-                                npm run test
-                                echo "Listing files after testing:"
-                                ls -la
-                            '''
+                        sh '''
+                            #test -f build/index.html
+                            npm test
+                        '''
+                    }
+                    post {
+                        always {
+                            junit 'jest-results/junit.xml'
                         }
                     }
                 }
@@ -70,22 +60,25 @@ pipeline {
                     }
 
                     steps {
-                        script {
-                            echo 'Starting E2Test Stage'
-                            sh '''
-                                npm install @playwright/test@1.48.1
-                                npm install serve
-                                node_modules/.bin/serve -s build &
-                                sleep 10
-                                npx playwright test --reporter=html
-                            '''
+                        sh '''
+                            npm install @playwright/test@1.48.1
+                            npm install serve
+                            node_modules/.bin/serve -s build &
+                            sleep 10
+                            npx playwright test --reporter=html
+                        '''
+                    }
+
+                    post {
+                        always {
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Local', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy staging') {
             agent {
                 docker {
                     image "${NODE_IMAGE}"
@@ -93,23 +86,32 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    echo 'Starting Build Stage'
-                    sh '''
-                        npm install netlify-cli
-                        node_modules/.bin/netlify --version
-                        node_modules/.bin/netlify status
-                        node_modules/.bin/netlify deploy --dir=build --prod
-                    '''
-                }
+                sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build
+                '''
             }
         }
-    }
 
-    post {
-        always {
-            junit 'jest-results/junit.xml'
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+        stage('Deploy prod') {
+            agent {
+                docker {
+                    image "${NODE_IMAGE}"
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod
+                '''
+            }
         }
     }
 }
