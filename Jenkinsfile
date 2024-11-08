@@ -8,14 +8,8 @@ pipeline {
     }
 
     stages {
-
         stage('Build') {
-            agent {
-                docker {
-                    image "${NODE_IMAGE}"
-                    reuseNode true
-                }
-            }
+            agent { docker { image NODE_IMAGE; args '-v /var/run/docker.sock:/var/run/docker.sock' } }
             steps {
                 sh '''
                     ls -la
@@ -29,14 +23,9 @@ pipeline {
         }
 
         stage('Deploy staging') {
-            agent {
-                docker {
-                    image "${NODE_IMAGE}"
-                    reuseNode true
-                }
-            }
+            agent { docker { image NODE_IMAGE; args '-v /var/run/docker.sock:/var/run/docker.sock' } }
             steps {
-                echo 'Starting Stage Build Stage'
+                echo 'Starting Deploy Staging'
                 sh '''
                     npm install netlify-cli
                     node_modules/.bin/netlify --version
@@ -47,12 +36,7 @@ pipeline {
         }
 
         stage('Deploy prod') {
-            agent {
-                docker {
-                    image "${NODE_IMAGE}"
-                    reuseNode true
-                }
-            }
+            agent { docker { image NODE_IMAGE; args '-v /var/run/docker.sock:/var/run/docker.sock' } }
             steps {
                 sh '''
                     npm install netlify-cli
