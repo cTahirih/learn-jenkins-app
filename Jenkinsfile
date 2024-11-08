@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NODE_IMAGE = 'node:18-alpine'
-        NETLIFY_SITE_ID = 'ce7b6e06-d0e0-41f2-ba92-7ea4780a5c43'
+        NETLIFY_SITE_ID = 'cb2c3525-a650-47d5-a7b2-19003edab68c'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
